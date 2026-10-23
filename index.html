@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>micro:bit 10秒計數器邏輯小學堂 (重點標註版)</title>
+    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=CG9c4HElOEs7hQwSMefad-Ti6P-JxvznebtW-lROCobRdapa_9I2sHiZdpX0v9VSWkj778O1Wo43KDK_BRaGoc3Bpn3TFsK3W2FpVCBFv77fYODGvBOJn4EQt6k9uAm1m-uLkiSY5uG3S1Ky3Q40yP5lCoP3xrIvVW4Y0zT3oXJvyS74LP38gmrmGF1X1LTGoEwpKWZV8oM7nsU9mSTMqm1G6XsxPvTjH9iN5XVchVG-HNFpgJHg-wyjs7nCouJlbcCb9yEr4Z52oe7yPeWN06gJMHrsnQy0S3XrMMk1od3No2OA6qK7X0cV2o6uRC-8tJzWFyxa7vDcMoW9Vhb77A" charset="UTF-8"></script><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        .font-fun { font-family: 'ZCOOL KuaiLe', 'Noto Sans TC', cursive, sans-serif; }
+        .matrix-dot {
+            width: 36px;
+            height: 36px;
+            background-color: #111;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+        }
+        .matrix-dot.active {
+            background-color: #facc15;
+            box-shadow: 0 0 16px #facc15;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 font-sans text-gray-100 min-h-screen p-2 md:p-4">
+    <div class="max-w-5xl mx-auto bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
+        <!-- 標題區 -->
+        <div class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-2 px-4 text-center">
+            <h1 class="text-xl md:text-2xl font-fun mb-0.5">⏱️ micro:bit 10秒晃動計數器</h1>
+            <p class="text-violet-200 text-[11px]">小學六年級程式邏輯解說板</p>
+        </div>
+
+        <div class="p-3 md:p-4 space-y-3">
+            <!-- 狀態說明導覽列 (精簡) -->
+            <div id="status-banner" class="bg-amber-950 border-2 border-amber-500 py-2 px-3 rounded-lg flex items-center space-x-3 shadow">
+                <div id="status-icon" class="text-2xl">🛑</div>
+                <div class="w-full">
+                    <div class="text-[9px] text-amber-400 font-mono tracking-widest uppercase">【目前程式狀態】</div>
+                    <div id="status-text" class="text-xs md:text-sm font-bold text-amber-100 leading-tight">
+                        遊戲尚未開始！目前燈泡全滅，請點擊【按鈕 A】來啟動程式！
+                    </div>
+                </div>
+            </div>
+
+            <!-- 動態模擬器主區 -->
+            <div class="bg-slate-900 p-4 md:p-6 rounded-xl border border-slate-700 shadow-inner">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <!-- micro:bit 硬體外觀模擬 -->
+                    <div class="flex flex-col items-center bg-slate-950 p-5 rounded-2xl border-2 border-slate-600 shadow-xl w-full">
+                        <div class="text-sm text-slate-200 mb-2 font-mono flex items-center justify-between w-full px-2 font-bold">
+                            <span>micro:bit V2 模擬板</span>
+                            <span id="board-mode" class="bg-amber-900 text-amber-300 px-2.5 py-0.5 rounded text-xs font-black tracking-wider">燈全滅 (待命)</span>
+                        </div>
+
+                        <!-- 5x5 LED 點陣螢幕 -->
+                        <div class="bg-black p-4 rounded-xl border-4 border-slate-800 shadow-inner mb-4 flex flex-col items-center justify-center min-h-[220px] min-w-[260px] w-full">
+                            <div id="led-matrix-icon" class="grid grid-cols-5 gap-3">
+                                <div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div>
+                                <div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div>
+                                <div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div>
+                                <div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div>
+                                <div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div>
+                            </div>
+                            <div id="led-matrix-number" class="hidden text-7xl font-mono font-black text-yellow-400 tracking-wider">
+                                0
+                            </div>
+                        </div>
+
+                        <!-- 狀態變數顯示 -->
+                        <div class="grid grid-cols-3 gap-2 w-full text-center font-mono bg-slate-900 p-3 rounded-lg border border-slate-800">
+                            <div>
+                                <div class="text-slate-300 text-xs font-bold">變數：次數</div>
+                                <div id="var-count" class="text-green-400 font-black text-xl">0</div>
+                            </div>
+                            <div>
+                                <div class="text-slate-300 text-xs font-bold">變數：時間</div>
+                                <div id="var-time" class="text-red-400 font-bold text-sm">關閉 (false)</div>
+                            </div>
+                            <div>
+                                <div class="text-slate-300 text-xs font-bold">剩餘秒數</div>
+                                <div id="timer-countdown" class="text-blue-400 font-black text-xl">10</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按鈕區 -->
+                    <div class="flex flex-col space-y-4 items-center justify-center w-full">
+                        <div class="space-y-1.5 bg-slate-950 p-5 rounded-xl border border-violet-500/50 shadow w-full max-w-[320px]">
+                            <label class="text-xs text-violet-300 font-mono font-bold block">【步驟 1】點擊觸發積木：</label>
+                            <button id="btn-a" onclick="pressButtonA()" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 px-4 rounded-xl shadow transition transform active:scale-95 flex items-center justify-center space-x-2 border border-violet-300 cursor-pointer text-sm tracking-wide">
+                                <span>🟢 按下按鈕 A (開始 10 秒計時)</span>
+                            </button>
+                        </div>
+
+                        <div class="space-y-1.5 bg-slate-950 p-5 rounded-xl border border-emerald-500/50 shadow w-full max-w-[320px]">
+                            <label class="text-xs text-emerald-300 font-mono font-bold block">【步驟 2】點擊感測器積木：</label>
+                            <button id="btn-shake" onclick="shakeMicrobit()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl shadow transition transform active:scale-95 flex items-center justify-center space-x-2 border border-emerald-300 cursor-pointer text-sm tracking-wide">
+                                <span>📳 晃動 micro:bit (搖一下)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 兩大核心積木詳解 (第2、3行加上醒目底色框重點) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- 左側積木解說 -->
+                <div class="bg-violet-950/40 border border-violet-800/60 rounded-xl p-4">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <span class="bg-violet-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">1</span>
+                        <h3 class="text-base font-bold text-violet-200">按鈕 A：遊戲開始</h3>
+                    </div>
+                    <ul class="space-y-1.5 text-xs md:text-sm text-violet-300">
+                        <li>💡 <b>顯示圖示：</b>點亮螢幕。</li>
+                        <li>🎯 <b>次數設為 0：</b>將計分歸零。</li>
+                        <li>🔓 <b>時間設為 true：</b>打開計時大門。</li>
+                        <li>⏳ <b>暫停 10 秒：</b>計時 10 秒。</li>
+                        <li>🔒 <b>時間設為 false：</b>關閉計時大門。</li>
+                    </ul>
+                </div>
+
+                <!-- 右側積木解說 (第2、3行加入高亮底色框) -->
+                <div class="bg-emerald-950/40 border border-emerald-800/60 rounded-xl p-4">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <span class="bg-emerald-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">2</span>
+                        <h3 class="text-base font-bold text-emerald-200">晃動事件：加分與顯示</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs md:text-sm text-emerald-300">
+                        <li>📳 <b>當姿勢晃動發生：</b>手只要一搖動板子，就會立刻啟動這段程式。</li>
+                        
+                        <!-- 重點加亮框 -->
+                        <div class="bg-emerald-900/60 border-2 border-emerald-400 p-2.5 rounded-lg space-y-2 shadow-inner my-1">
+                            <li>🚪 <b>檢查時間是不是 true：</b>看看現在 10 秒計時的大門有沒有開著？</li>
+                            <li>➕ <b>次數加 1：</b>如果大門開著，就把變數「次數」加 1。</li>
+                        </div>
+
+                        <li>🔢 <b>在螢幕上顯示數字：</b>把剛剛加完分後的最新數字，秀在 LED 螢幕上。</li>
+                        <li>🛑 <b>暫停 100 毫秒（防彈跳機制）：</b>
+                            <br><b>詳細原因：</b>micro:bit 內部的加速規（感應器）極度靈敏。當我們用力「搖一下」板子時，物理上會產生一連串連續的震動波。如果不加這 0.1 秒的強制休息時間，感應器就會在同一次甩動中連續觸發好幾次，導致玩家明明只搖一下，分數卻瞬間暴衝好幾分！加上這 0.1 秒能讓感應器冷卻，確保「搖一下 = 扎實加 1 分」。
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let count = 0;
+        let timeActive = false;
+        let timeLeft = 10;
+        let timerInterval = null;
+        let gameStarted = false; 
+        let hasShakenSinceStart = false; 
+        let isCooldown = false; 
+
+        function updateUI() {
+            document.getElementById('var-count').innerText = count;
+            document.getElementById('var-time').innerText = timeActive ? '開啟 (true)' : '關閉 (false)';
+            document.getElementById('var-time').className = timeActive ? 'text-green-400 font-bold text-sm' : 'text-red-400 font-bold text-sm';
+            document.getElementById('timer-countdown').innerText = timeLeft;
+
+            const statusText = document.getElementById('status-text');
+            const statusIcon = document.getElementById('status-icon');
+            const statusBanner = document.getElementById('status-banner');
+            const boardMode = document.getElementById('board-mode');
+            const matrixIcon = document.getElementById('led-matrix-icon');
+            const matrixNumber = document.getElementById('led-matrix-number');
+
+            matrixIcon.innerHTML = `
+                <div class="matrix-dot"></div><div class="matrix-dot active"></div><div class="matrix-dot"></div><div class="matrix-dot active"></div><div class="matrix-dot"></div>
+                <div class="matrix-dot active"></div><div class="matrix-dot active"></div><div class="matrix-dot active"></div><div class="matrix-dot active"></div><div class="matrix-dot active"></div>
+                <div class="matrix-dot active"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot active"></div>
+                <div class="matrix-dot"></div><div class="matrix-dot active"></div><div class="matrix-dot"></div><div class="matrix-dot active"></div><div class="matrix-dot"></div>
+                <div class="matrix-dot"></div><div class="matrix-dot"></div><div class="matrix-dot active"></div><div class="matrix-dot"></div><div class="matrix-dot"></div>
+            `;
+            const matrixDots = matrixIcon.querySelectorAll('.matrix-dot');
+
+            if (!gameStarted) {
+                statusIcon.innerText = "🛑";
+                statusText.innerText = "遊戲尚未開始！目前燈泡全滅，時間變數為 false，請點擊【按鈕 A】！";
+                statusBanner.className = "bg-amber-950 border-2 border-amber-500 py-2 px-3 rounded-lg flex items-center space-x-3 shadow";
+                boardMode.innerText = "燈全滅 (待命)";
+                boardMode.className = "bg-amber-900 text-amber-300 px-2.5 py-0.5 rounded text-xs font-black";
+                
+                matrixDots.forEach(dot => dot.classList.remove('active'));
+                matrixIcon.classList.remove('hidden');
+                matrixNumber.classList.add('hidden');
+            } else if (timeActive) {
+                statusIcon.innerText = "⚡";
+                statusText.innerText = `🎮 遊戲進行中！時間 = true，剩餘 ${timeLeft} 秒，快晃動！`;
+                statusBanner.className = "bg-emerald-950 border-2 border-emerald-500 py-2 px-3 rounded-lg flex items-center space-x-3 shadow animate-pulse";
+                boardMode.innerText = "計時中 (時間=true)";
+                boardMode.className = "bg-emerald-900 text-emerald-300 px-2.5 py-0.5 rounded text-xs font-black";
+
+                const activePattern = [0,1,0,1,0, 1,1,1,1,1, 1,0,0,0,1, 0,1,0,1,0, 0,0,1,0,0];
+                matrixDots.forEach((dot, index) => {
+                    if (activePattern[index]) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+
+                if (hasShakenSinceStart) {
+                    matrixIcon.classList.add('hidden');
+                    matrixNumber.classList.remove('hidden');
+                    matrixNumber.innerText = count;
+                } else {
+                    matrixIcon.classList.remove('hidden');
+                    matrixNumber.classList.add('hidden');
+                }
+            } else {
+                statusIcon.innerText = "⏰";
+                statusText.innerText = `⏱️ 時間到！時間變為 false，總共獲得 ${count} 分！請再按一次按鈕 A！`;
+                statusBanner.className = "bg-rose-950 border-2 border-rose-500 py-2 px-3 rounded-lg flex items-center space-x-3 shadow";
+                boardMode.innerText = "時間到 (時間=false)";
+                boardMode.className = "bg-rose-900 text-rose-300 px-2.5 py-0.5 rounded text-xs font-black";
+            }
+        }
+
+        function pressButtonA() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            gameStarted = true;
+            hasShakenSinceStart = false;
+            count = 0;
+            timeActive = true;
+            timeLeft = 10;
+            isCooldown = false;
+            updateUI();
+
+            let startTime = Date.now();
+            timerInterval = setInterval(() => {
+                let elapsed = Math.floor((Date.now() - startTime) / 1000);
+                timeLeft = Math.max(0, 10 - elapsed);
+                updateUI();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timeActive = false;
+                    updateUI();
+                }
+            }, 1000);
+        }
+
+        function shakeMicrobit() {
+            if (!gameStarted) {
+                alert("⚠️ 遊戲還沒開始！請先點擊綠色的【按下按鈕 A】來啟動計時器。");
+                return;
+            }
+
+            if (timeActive) {
+                if (isCooldown) return; 
+                
+                isCooldown = true;
+                hasShakenSinceStart = true;
+                count += 1;
+                updateUI();
+
+                const matrixBox = document.getElementById('led-matrix-number');
+                matrixBox.classList.add('scale-125', 'text-yellow-200');
+                setTimeout(() => {
+                    matrixBox.classList.remove('scale-125', 'text-yellow-200');
+                }, 150);
+
+                setTimeout(() => {
+                    isCooldown = false;
+                }, 100);
+            } else {
+                alert("⏰ 時間已經到了！「時間」變數已經是 false，現在晃動不會計分喔！請再按一次按鈕 A。");
+            }
+        }
+
+        window.onload = function() {
+            updateUI();
+        };
+    </script>
+</body>
+</html>
